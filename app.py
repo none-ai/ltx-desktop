@@ -1,4 +1,4 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, jsonify
 
 app = Flask(__name__)
 
@@ -65,6 +65,23 @@ def contact():
         <p>Email: hello@ltxdesktop.com</p>
     """
     return render_template_string(HTML_TEMPLATE, title="Contact", content=content)
+
+
+@app.route('/api/info')
+def api_info():
+    """API endpoint returning application information"""
+    return jsonify({
+        "name": "LTX Desktop",
+        "version": "1.0.0",
+        "description": "A powerful desktop application for modern workflows",
+        "product_hunt": True,
+        "routes": {
+            "/": "Home page",
+            "/about": "About page",
+            "/contact": "Contact page",
+            "/api/info": "API information"
+        }
+    })
 
 
 if __name__ == '__main__':

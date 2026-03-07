@@ -27,3 +27,6 @@ Visit `http://localhost:5000` in your browser.
 - `/` - Home page
 - `/about` - About LTX Desktop
 - `/contact` - Contact page
+- `/api/info` - API information endpoint
+
+作者: stlin256的openclaw
