@@ -1,88 +1,158 @@
-from flask import Flask, render_template_string, jsonify
+import os
+from datetime import datetime
+from flask import Flask, render_template, jsonify, request
 
 app = Flask(__name__)
 
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }} - LTX Desktop</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f5f5f5; }
-        nav { background: #333; padding: 1rem; }
-        nav a { color: white; text-decoration: none; margin-right: 1rem; }
-        nav a:hover { text-decoration: underline; }
-        .container { max-width: 800px; margin: 2rem auto; padding: 2rem; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        h1 { color: #333; }
-        p { line-height: 1.6; color: #666; }
-        .footer { text-align: center; padding: 1rem; color: #999; }
-    </style>
-</head>
-<body>
-    <nav>
-        <a href="/">Home</a>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-    </nav>
-    <div class="container">
-        {{ content | safe }}
-    </div>
-    <div class="footer">
-        LTX Desktop - Featured on Product Hunt
-    </div>
-</body>
-</html>
-"""
+# Configuration
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+app.config['VERSION'] = '1.1.0'
+app.config['APP_NAME'] = 'LTX Desktop'
 
 
 @app.route('/')
 def home():
-    content = """
-        <h1>LTX Desktop</h1>
-        <p>Welcome to LTX Desktop - A powerful desktop application for modern workflows.</p>
-        <p>Featured on Product Hunt!</p>
-    """
-    return render_template_string(HTML_TEMPLATE, title="Home", content=content)
+    """Home page with product information"""
+    return render_template('home.html', title="Home")
+
+
+@app.route('/features')
+def features():
+    """Features page showcasing product capabilities"""
+    features_list = [
+        {
+            "icon": "🚀",
+            "title": "Lightning Fast",
+            "description": "Experience blazing fast performance with optimized code and efficient resource management."
+        },
+        {
+            "icon": "🎨",
+            "title": "Modern UI",
+            "description": "Beautiful, intuitive interface designed for the modern user experience."
+        },
+        {
+            "icon": "🔄",
+            "title": "Real-time Sync",
+            "description": "Keep your data synchronized across all devices in real-time."
+        },
+        {
+            "icon": "🔒",
+            "title": "Secure",
+            "description": "Enterprise-grade security to protect your data and privacy."
+        },
+        {
+            "icon": "⚙️",
+            "title": "Customizable",
+            "description": "Adapt the application to your workflow with extensive customization options."
+        },
+        {
+            "icon": "📊",
+            "title": "Analytics",
+            "description": "Built-in analytics to help you understand and improve your productivity."
+        }
+    ]
+    return render_template('features.html', title="Features", features=features_list)
 
 
 @app.route('/about')
 def about():
-    content = """
-        <h1>About LTX Desktop</h1>
-        <p>LTX Desktop is designed to help you work more efficiently with a sleek, modern interface.</p>
-        <p>Built with cutting-edge technology, LTX Desktop offers seamless integration and lightning-fast performance.</p>
-    """
-    return render_template_string(HTML_TEMPLATE, title="About", content=content)
+    """About page describing the product and mission"""
+    return render_template('about.html', title="About")
 
 
 @app.route('/contact')
 def contact():
-    content = """
-        <h1>Contact Us</h1>
-        <p>We'd love to hear from you!</p>
-        <p>Email: hello@ltxdesktop.com</p>
-    """
-    return render_template_string(HTML_TEMPLATE, title="Contact", content=content)
+    """Contact page with contact information and form"""
+    return render_template('contact.html', title="Contact")
 
 
 @app.route('/api/info')
 def api_info():
     """API endpoint returning application information"""
     return jsonify({
-        "name": "LTX Desktop",
-        "version": "1.0.0",
+        "name": app.config['APP_NAME'],
+        "version": app.config['VERSION'],
         "description": "A powerful desktop application for modern workflows",
         "product_hunt": True,
         "routes": {
             "/": "Home page",
+            "/features": "Features page",
             "/about": "About page",
             "/contact": "Contact page",
-            "/api/info": "API information"
+            "/api/info": "API information",
+            "/api/health": "Health check endpoint"
+        },
+        "timestamp": datetime.utcnow().isoformat()
+    })
+
+
+@app.route('/api/health')
+def health_check():
+    """Health check endpoint for monitoring"""
+    return jsonify({
+        "status": "healthy",
+        "service": app.config['APP_NAME'],
+        "version": app.config['VERSION'],
+        "timestamp": datetime.utcnow().isoformat(),
+        "uptime": "operational"
+    })
+
+
+@app.route('/api/contact', methods=['POST'])
+def contact_submit():
+    """Handle contact form submissions"""
+    data = request.get_json()
+
+    if not data:
+        return jsonify({
+            "success": False,
+            "message": "Invalid request data"
+        }), 400
+
+    name = data.get('name')
+    email = data.get('email')
+    message = data.get('message')
+
+    if not all([name, email, message]):
+        return jsonify({
+            "success": False,
+            "message": "Missing required fields"
+        }), 400
+
+    # In production, you would save this to a database or send an email
+    # For now, we'll just return a success response
+    return jsonify({
+        "success": True,
+        "message": "Thank you for your message! We'll get back to you soon.",
+        "data": {
+            "name": name,
+            "email": email,
+            "received_at": datetime.utcnow().isoformat()
         }
     })
 
 
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors"""
+    return jsonify({
+        "error": "Not Found",
+        "message": "The requested resource was not found",
+        "status": 404
+    }), 404
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors"""
+    return jsonify({
+        "error": "Internal Server Error",
+        "message": "Something went wrong on our end",
+        "status": 500
+    }), 500
+
+
 if __name__ == '__main__':
-    app.run(debug=True)
+    debug_mode = os.environ.get('FLASK_DEBUG', 'True').lower() == 'true'
+    port = int(os.environ.get('PORT', 5000))
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
