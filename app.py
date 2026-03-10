@@ -1,6 +1,12 @@
 import os
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, g
+import logging
+import uuid
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
@@ -8,6 +14,18 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 app.config['VERSION'] = '1.1.0'
 app.config['APP_NAME'] = 'LTX Desktop'
+
+# Request ID middleware
+@app.before_request
+def before_request():
+    g.request_id = str(uuid.uuid8())[:8]
+    logger.info(f"[{g.request_id}] {request.method} {request.path}")
+
+@app.after_request
+def after_request(response):
+    logger.info(f"[{g.request_id}] Status: {response.status_code}")
+    response.headers['X-Request-ID'] = g.request_id
+    return response
 
 
 @app.route('/')
@@ -135,20 +153,24 @@ def contact_submit():
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors"""
+    logger.warning(f"404 Not Found: {request.path}")
     return jsonify({
         "error": "Not Found",
         "message": "The requested resource was not found",
-        "status": 404
+        "status": 404,
+        "request_id": g.request_id
     }), 404
 
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors"""
+    logger.error(f"500 Internal Error: {error}")
     return jsonify({
         "error": "Internal Server Error",
         "message": "Something went wrong on our end",
-        "status": 500
+        "status": 500,
+        "request_id": g.request_id
     }), 500
 
 
