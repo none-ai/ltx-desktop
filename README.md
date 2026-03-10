@@ -9,6 +9,8 @@ A modern Flask web application for LTX Desktop, featured on Product Hunt.
 - **About Page** - Company mission and technology information
 - **Contact Page** - Contact form for user feedback
 - **API Endpoints** - RESTful API for application information
+- **Rate Limiting** - Built-in rate limiting for API protection
+- **Request Tracking** - Unique request ID for every API call
 
 ### API Endpoints
 
@@ -17,6 +19,9 @@ A modern Flask web application for LTX Desktop, featured on Product Hunt.
 | `/api/info` | GET | Application information |
 | `/api/health` | GET | Health check endpoint |
 | `/api/contact` | POST | Submit contact form |
+| `/api/stats` | GET | Application statistics |
+| `/api/features` | GET | List all features |
+| `/api/routes` | GET | List all available routes |
 
 ## Installation
 
